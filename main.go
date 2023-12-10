@@ -31,9 +31,6 @@ func main() {
 
 	// Set up server port
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	// Start the server
 	log.Printf("Server running on :%s", port)
