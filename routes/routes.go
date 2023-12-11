@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gin-api/controllers"
+	"gin-api/helpers"
 	"gin-api/middleware"
 )
 
@@ -31,15 +32,22 @@ func InitRoutes(router *gin.Engine) {
 		roles.GET("/allRoles", controllers.GetAllRoles)
 	}
 
-	private := users.Group("/apit")
-	private.Use(middleware.EnsureAdmin())
-	{
-		private.GET("/ok/:id", controllers.OneUsersHandler)
-	}
-
 	product := router.Group("/api/product")
 	{
 		product.POST("/createProduct", middleware.EnsureAdmin(), controllers.CreateProduct)
+		product.POST("/createTransProduct", middleware.EnsureAdmin(), controllers.CreateProduct)
 		product.GET("/allProduct", middleware.EnsureAdmin(), controllers.AllProduct)
+		product.GET("/oneProduct/:id", middleware.EnsureAdmin(), controllers.OneProduct)
+		product.PUT("/updateProduct/:id", middleware.EnsureAdmin(), controllers.UpdateProduct)
+		product.DELETE("/deleteProduct/:id", middleware.EnsureAdmin(), controllers.DeleteProduct)
+		product.GET("/image/:filename", helpers.ShowImageFromMinio)
+		product.GET("/download/:filename", helpers.DownloadImage)
+	}
+
+	categori := router.Group("/api/categori")
+	{
+		categori.POST("/createCategori", middleware.EnsureAdmin(), controllers.CreateCategori)
+		categori.GET("/allCategori", middleware.EnsureAdmin(), controllers.AllCategories)
+		categori.GET("/oneCategori/:id", middleware.EnsureAdmin(), controllers.OneCategori)
 	}
 }
