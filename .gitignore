@@ -1,5 +1,5 @@
-tmp/build-errors.log
-tmp/main
+./tmp/build-errors.log
+./tmp/main
 .env
 .air.toml
 Dockerfile
