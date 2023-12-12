@@ -1,6 +1,6 @@
 module gin-api
 
-go 1.23
+go 1.21.5
 
 require (
 	github.com/0xAX/notificator v0.0.0-20220220101646-ee9b8921e557 // indirect
