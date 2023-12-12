@@ -21,11 +21,6 @@ import (
 	"gin-api/models"
 )
 
-type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
 type loginResponse struct {
 	Username string `json:"username"`
 	Token    string `json:"token"`
@@ -51,7 +46,7 @@ func VerifyPassword(userPassword string, providedPassword string) bool {
 // CreateUser creates a new user
 func CreateUser(c *gin.Context) {
 	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
 		return
 	}
@@ -69,13 +64,33 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User created", "data": user})
+	result := gin.H{
+		"id":         user.ID,
+		"username":   user.Username,
+		"password":   user.Password,
+		"name":       user.Name,
+		"image":      user.Image.Filename,
+		"roles":      user.Role_id,
+		"created_at": user.Created_at,
+		"update_at":  user.Updated_at,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User created",
+		"status":  http.StatusOK,
+		"data":    result,
+	})
 }
 
 // Login is the api used to tget a single user
 func Login(c *gin.Context) {
+	type LoginRequest struct {
+		Username string `form:"username" binding:"required"`
+		Password string `form:"password" binding:"required"`
+	}
+
 	request := new(LoginRequest)
-	if err := c.Bind(request); err != nil {
+	if err := c.ShouldBind(request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
 			"message": err.Error(),
@@ -83,10 +98,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
-		Username: request.Username,
-		Password: request.Password,
-	}
+	var user models.User
 
 	err := userCollection.FindOne(context.Background(), bson.M{"username": request.Username}).Decode(&user)
 	if err != nil {
@@ -115,9 +127,6 @@ func Login(c *gin.Context) {
 	claims["roleType"] = role.Name
 	claims["exp"] = time.Now().Add(time.Hour * 3).Unix() // expired in 3 hours
 
-	// jsonClaims, _ := json.Marshal(claims)
-	// fmt.Println(string(jsonClaims))
-
 	token, errGenerateToken := helpers.GenerateAllTokens(&claims)
 	if errGenerateToken != nil {
 		log.Println(errGenerateToken)
@@ -127,15 +136,15 @@ func Login(c *gin.Context) {
 
 	c.SetCookie("jwt", token, 86400, "/", "localhost", false, true)
 
-	loginResponse := loginResponse{
-		Username: user.Username,
-		Token:    token,
+	result := gin.H{
+		"name":  user.Name,
+		"token": token,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Successfully!!!",
 		"status":  http.StatusOK,
-		"data":    loginResponse,
+		"data":    result,
 	})
 }
 
