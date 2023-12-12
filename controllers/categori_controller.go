@@ -161,5 +161,77 @@ func OneCategori(c *gin.Context) {
 // @Failure 400 {object} model.HTTPError
 // @Router /accounts/{id} [get]
 func UpdateCategori(c *gin.Context) {
+	var categori models.UpdateCategoriRequest
 
+	// Parse UUID first
+	categoriID := c.Param("id")
+	uuid, err := uuid.Parse(categoriID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	if err := c.ShouldBind(&categori); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Set the ID after binding
+	categori.ID = uuid.String()
+
+	filter := bson.M{"_id": categori.ID}
+	update := bson.M{"$set": categori}
+
+	if categori.Image != nil {
+		err := helpers.UploadImageToMinio(categori.Image, categori.Image.Filename)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error uploading image to MinIO"})
+			return
+		}
+	}
+
+	_, err = categoriCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating"})
+		return
+	}
+	fmt.Print(categori)
+	result := gin.H{
+		"id":    categori.ID,
+		"name":  categori.Name,
+		"image": categori.Image.Filename,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Categori updated",
+		"data":    result,
+	})
+}
+
+// ref: https://swaggo.github.io/swaggo.io/declarative_comments_format/api_operation.html
+// @Summary Show an account
+// @Description get string by ID
+// @Tags accounts
+// @Accept  json
+// @Produce  json
+// @Param id path string true "Account ID"
+// @Success 200 {object} model.Account
+// @Failure 400 {object} model.HTTPError
+// @Router /accounts/{id} [get]
+func DeleteCategori(c *gin.Context) {
+	categoriID := c.Param("id")
+
+	filter := bson.M{"_id": categoriID}
+	result, err := categoriCollection.DeleteOne(context.Background(), filter)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting categori"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("User deleted. %d documents deleted", result.DeletedCount),
+	})
 }

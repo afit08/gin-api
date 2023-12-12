@@ -49,5 +49,7 @@ func InitRoutes(router *gin.Engine) {
 		categori.POST("/createCategori", middleware.EnsureAdmin(), controllers.CreateCategori)
 		categori.GET("/allCategori", middleware.EnsureAdmin(), controllers.AllCategories)
 		categori.GET("/oneCategori/:id", middleware.EnsureAdmin(), controllers.OneCategori)
+		categori.PUT("/updateCategori/:id", middleware.EnsureAdmin(), controllers.UpdateCategori)
+		categori.DELETE("/deleteCategori/:id", middleware.EnsureAdmin(), controllers.DeleteCategori)
 	}
 }
